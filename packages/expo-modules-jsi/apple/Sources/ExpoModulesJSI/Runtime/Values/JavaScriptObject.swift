@@ -256,6 +256,34 @@ public struct JavaScriptObject: JavaScriptType, Sendable, ~Copyable {
     expo.setProperty(runtime.pointee, pointee, name, facebook.jsi.Value(runtime.pointee, object.pointee))
   }
 
+  /// Sets a property to a synchronous host function created from the given closure. The function
+  /// is named after the property and runs the closure when called from JavaScript, returning its
+  /// result synchronously. Equivalent to `setProperty(name, runtime.createFunction(name) { … })`.
+  @JavaScriptActor
+  public func setProperty(
+    _ name: String, _ function: sending @escaping JavaScriptRuntime.SyncFunctionClosure
+  ) {
+    guard let runtime else {
+      FatalError.runtimeLost()
+    }
+    setProperty(name, runtime.createFunction(name, function).asObject())
+  }
+
+  /// Sets a property to an asynchronous host function created from the given closure. The function
+  /// is named after the property and runs the closure when called from JavaScript, returning a
+  /// promise that resolves with its result. Equivalent to
+  /// `setProperty(name, runtime.createAsyncFunction(name) { … })`. The `async` closure body
+  /// selects this overload over the synchronous `setProperty(_:_:)`.
+  @JavaScriptActor
+  public func setProperty(
+    _ name: String, _ function: sending @escaping JavaScriptRuntime.AsyncFunctionClosure
+  ) {
+    guard let runtime else {
+      FatalError.runtimeLost()
+    }
+    setProperty(name, runtime.createAsyncFunction(name, function).asObject())
+  }
+
   /// Deletes a property with the given name. After calling this function,
   /// `hasProperty` will return `false`, and `getProperty` will return `undefined` value.
   #if !os(macOS)
