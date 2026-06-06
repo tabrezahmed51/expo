@@ -43,9 +43,11 @@ public macro JS(_ jsName: String? = nil) =
   #externalMacro(module: "ExpoModulesMacros", type: "JSMacro")
 
 /// Member macro applied to a `Module` subclass. Scans the class body for declarations
-/// marked with `@JS` and synthesizes a framework-internal `_exposedDefinition()` method.
+/// marked with `@JS` and synthesizes a framework-internal `_synthesizedDefinition()` method.
 /// `expo-modules-core` calls it automatically and merges the result into the module's
-/// definition, so the user doesn't have to reference it from `definition()`.
+/// definition, so the user doesn't have to reference it from `definition()`. `@JS` functions are
+/// additionally bound directly into the module's JS object by a synthesized
+/// `_decorateModule(object:in:appContext:)`.
 ///
 /// Usage:
 ///
@@ -58,13 +60,15 @@ public macro JS(_ jsName: String? = nil) =
 ///       @JS
 ///       func greet(name: String) -> String { "Hi, \(name)" }
 ///     }
-@attached(member, names: named(_exposedDefinition), named(appContext), named(init))
+@attached(
+  member,
+  names: named(_synthesizedDefinition), named(appContext), named(init), named(_decorateModule))
 public macro ExpoModule(_ name: String? = nil, classes: [Any.Type] = []) =
   #externalMacro(module: "ExpoModulesMacros", type: "ExpoModuleMacro")
 
 /// Member macro applied to a `SharedObject` subclass. Scans the class body for declarations
 /// marked with `@JS` (including a single `@JS init(...)` for the JS constructor) and
-/// synthesizes a `_exposedClassDefinition()` static method returning a `ClassDefinition`.
+/// synthesizes a `_synthesizedClassDefinition()` static method returning a `ClassDefinition`.
 /// The companion `@ExpoModule(classes: [Foo.self])` wires the class into the module's
 /// exposed surface.
 ///
@@ -81,7 +85,7 @@ public macro ExpoModule(_ name: String? = nil, classes: [Any.Type] = []) =
 ///       @JS
 ///       var size: Int { 42 }
 ///     }
-@attached(member, names: named(_exposedClassDefinition))
+@attached(member, names: named(_synthesizedClassDefinition))
 public macro SharedObject(_ name: String? = nil) =
   #externalMacro(module: "ExpoModulesMacros", type: "SharedObjectMacro")
 
